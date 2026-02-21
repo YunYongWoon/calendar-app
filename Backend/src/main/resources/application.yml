@@ -1,0 +1,21 @@
+spring:
+  profiles:
+    active: local
+  jpa:
+    open-in-view: false
+
+springdoc:
+  api-docs:
+    path: /api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+
+server:
+  servlet:
+    context-path: /api
