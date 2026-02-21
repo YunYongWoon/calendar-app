@@ -13,9 +13,9 @@ CREATE TABLE member (
     created_at        DATETIME(6)  NOT NULL,
     updated_at        DATETIME(6)  NOT NULL,
 
-    CONSTRAINT uk_member_email UNIQUE (email),
-    INDEX idx_member_status (status)
+    CONSTRAINT uk_member_email UNIQUE (email)
 );
+CREATE INDEX idx_member_status ON member (status);
 
 -- (2) calendar_group
 CREATE TABLE calendar_group (
@@ -45,9 +45,9 @@ CREATE TABLE group_member (
 
     CONSTRAINT uk_group_member UNIQUE (group_id, member_id),
     CONSTRAINT fk_gm_group  FOREIGN KEY (group_id)  REFERENCES calendar_group(id),
-    CONSTRAINT fk_gm_member FOREIGN KEY (member_id) REFERENCES member(id),
-    INDEX idx_gm_member (member_id)
+    CONSTRAINT fk_gm_member FOREIGN KEY (member_id) REFERENCES member(id)
 );
+CREATE INDEX idx_gm_member ON group_member (member_id);
 
 -- (4) event
 CREATE TABLE event (
@@ -67,10 +67,10 @@ CREATE TABLE event (
     updated_at  DATETIME(6)  NOT NULL,
 
     CONSTRAINT fk_event_group   FOREIGN KEY (group_id)   REFERENCES calendar_group(id),
-    CONSTRAINT fk_event_creator FOREIGN KEY (creator_id) REFERENCES member(id),
-    INDEX idx_event_group_date (group_id, start_at, end_at),
-    INDEX idx_event_creator (creator_id)
+    CONSTRAINT fk_event_creator FOREIGN KEY (creator_id) REFERENCES member(id)
 );
+CREATE INDEX idx_event_group_date ON event (group_id, start_at, end_at);
+CREATE INDEX idx_event_creator ON event (creator_id);
 
 -- (5) recurrence_rule
 CREATE TABLE recurrence_rule (
@@ -97,9 +97,9 @@ CREATE TABLE event_attendee (
 
     CONSTRAINT uk_event_attendee UNIQUE (event_id, member_id),
     CONSTRAINT fk_ea_event  FOREIGN KEY (event_id)  REFERENCES event(id) ON DELETE CASCADE,
-    CONSTRAINT fk_ea_member FOREIGN KEY (member_id) REFERENCES member(id),
-    INDEX idx_ea_member (member_id)
+    CONSTRAINT fk_ea_member FOREIGN KEY (member_id) REFERENCES member(id)
 );
+CREATE INDEX idx_ea_member ON event_attendee (member_id);
 
 -- (7) event_comment
 CREATE TABLE event_comment (
@@ -112,9 +112,9 @@ CREATE TABLE event_comment (
     updated_at DATETIME(6)  NOT NULL,
 
     CONSTRAINT fk_comment_event  FOREIGN KEY (event_id)  REFERENCES event(id) ON DELETE CASCADE,
-    CONSTRAINT fk_comment_member FOREIGN KEY (member_id) REFERENCES member(id),
-    INDEX idx_comment_event (event_id, created_at)
+    CONSTRAINT fk_comment_member FOREIGN KEY (member_id) REFERENCES member(id)
 );
+CREATE INDEX idx_comment_event ON event_comment (event_id, created_at);
 
 -- (8) comment_reply
 CREATE TABLE comment_reply (
@@ -126,9 +126,9 @@ CREATE TABLE comment_reply (
     updated_at DATETIME(6)  NOT NULL,
 
     CONSTRAINT fk_reply_comment FOREIGN KEY (comment_id) REFERENCES event_comment(id) ON DELETE CASCADE,
-    CONSTRAINT fk_reply_member  FOREIGN KEY (member_id)  REFERENCES member(id),
-    INDEX idx_reply_comment (comment_id, created_at)
+    CONSTRAINT fk_reply_member  FOREIGN KEY (member_id)  REFERENCES member(id)
 );
+CREATE INDEX idx_reply_comment ON comment_reply (comment_id, created_at);
 
 -- (9) event_reaction
 CREATE TABLE event_reaction (
@@ -139,9 +139,9 @@ CREATE TABLE event_reaction (
 
     CONSTRAINT uk_event_reaction UNIQUE (event_id, member_id, emoji),
     CONSTRAINT fk_reaction_event  FOREIGN KEY (event_id)  REFERENCES event(id) ON DELETE CASCADE,
-    CONSTRAINT fk_reaction_member FOREIGN KEY (member_id) REFERENCES member(id),
-    INDEX idx_reaction_event (event_id)
+    CONSTRAINT fk_reaction_member FOREIGN KEY (member_id) REFERENCES member(id)
 );
+CREATE INDEX idx_reaction_event ON event_reaction (event_id);
 
 -- (10) event_reminder
 CREATE TABLE event_reminder (
@@ -150,9 +150,9 @@ CREATE TABLE event_reminder (
     remind_before_minutes INT         NOT NULL,
     type                  VARCHAR(20) NOT NULL DEFAULT 'PUSH',
 
-    CONSTRAINT fk_reminder_event FOREIGN KEY (event_id) REFERENCES event(id) ON DELETE CASCADE,
-    INDEX idx_reminder_event (event_id)
+    CONSTRAINT fk_reminder_event FOREIGN KEY (event_id) REFERENCES event(id) ON DELETE CASCADE
 );
+CREATE INDEX idx_reminder_event ON event_reminder (event_id);
 
 -- (11) notification
 CREATE TABLE notification (
@@ -166,9 +166,9 @@ CREATE TABLE notification (
     is_read        BOOLEAN      NOT NULL DEFAULT FALSE,
     created_at     DATETIME(6)  NOT NULL,
 
-    CONSTRAINT fk_notification_member FOREIGN KEY (member_id) REFERENCES member(id),
-    INDEX idx_notification_member (member_id, is_read, created_at DESC)
+    CONSTRAINT fk_notification_member FOREIGN KEY (member_id) REFERENCES member(id)
 );
+CREATE INDEX idx_notification_member ON notification (member_id, is_read, created_at DESC);
 
 -- (12) refresh_token
 CREATE TABLE refresh_token (
@@ -179,6 +179,6 @@ CREATE TABLE refresh_token (
     created_at DATETIME(6)  NOT NULL,
 
     CONSTRAINT uk_refresh_token UNIQUE (token),
-    CONSTRAINT fk_rt_member FOREIGN KEY (member_id) REFERENCES member(id),
-    INDEX idx_rt_member (member_id)
+    CONSTRAINT fk_rt_member FOREIGN KEY (member_id) REFERENCES member(id)
 );
+CREATE INDEX idx_rt_member ON refresh_token (member_id);
