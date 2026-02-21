@@ -51,7 +51,6 @@ class AuthService(
         return MemberResult.from(savedMember)
     }
 
-    @Transactional(readOnly = true)
     override fun login(command: LoginCommand): AuthResult {
         val email = Email(command.email)
         val member = memberRepository.findByEmail(email)
