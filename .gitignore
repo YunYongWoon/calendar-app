@@ -1,0 +1,51 @@
+# === OS ===
+.DS_Store
+Thumbs.db
+
+# === IDE ===
+.idea/
+.vscode/
+*.iml
+*.iws
+*.ipr
+
+# === Backend (Kotlin + Spring Boot + Gradle) ===
+Backend/build/
+Backend/.gradle/
+Backend/bin/
+Backend/out/
+*.class
+*.jar
+*.war
+
+# === Frontend (React + TypeScript + Vite) ===
+Frontend/node_modules/
+Frontend/dist/
+Frontend/.cache/
+Frontend/coverage/
+
+# === App (Flutter) ===
+App/.dart_tool/
+App/.packages
+App/build/
+App/.flutter-plugins
+App/.flutter-plugins-dependencies
+App/ios/Pods/
+App/ios/.symlinks/
+App/android/.gradle/
+App/android/local.properties
+
+# === Environment & Secrets ===
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+credentials.json
+
+# === Logs ===
+*.log
+logs/
+
+# === Claude Code ===
+.claude/settings.local.json
