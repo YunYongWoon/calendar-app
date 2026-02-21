@@ -48,4 +48,10 @@ credentials.json
 logs/
 
 # === Claude Code ===
-.claude/settings.local.json
+.claude/
+.mcp.json
+Backend/.mcp.json
+CLAUDE.md
+Backend/CLAUDE.md
+Frontend/CLAUDE.md
+App/CLAUDE.md
