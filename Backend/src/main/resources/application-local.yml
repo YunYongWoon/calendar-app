@@ -17,6 +17,9 @@ spring:
     locations: classpath:db/migration
     baseline-on-migrate: true
 
+jwt:
+  secret: local-calendar-jwt-secret-key-must-be-at-least-256-bits-long-for-hs256
+
 logging:
   level:
     org.hibernate.SQL: DEBUG

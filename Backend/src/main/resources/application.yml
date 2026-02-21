@@ -19,3 +19,8 @@ management:
 server:
   servlet:
     context-path: /api
+
+jwt:
+  secret: default-secret-key-must-be-overridden-in-profile
+  access-token-expiry: 900000    # 15분 (ms)
+  refresh-token-expiry: 604800000 # 7일 (ms)

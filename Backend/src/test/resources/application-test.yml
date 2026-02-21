@@ -17,3 +17,8 @@ spring:
   h2:
     console:
       enabled: false
+
+jwt:
+  secret: test-calendar-jwt-secret-key-must-be-at-least-256-bits-long-for-hs256
+  access-token-expiry: 900000
+  refresh-token-expiry: 604800000

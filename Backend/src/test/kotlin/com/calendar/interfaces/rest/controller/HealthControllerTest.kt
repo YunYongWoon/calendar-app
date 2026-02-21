@@ -1,6 +1,9 @@
 package com.calendar.interfaces.rest.controller
 
 import com.calendar.infrastructure.config.SecurityConfig
+import com.calendar.infrastructure.security.JwtAuthenticationFilter
+import com.calendar.infrastructure.security.JwtProvider
+import com.ninjasquad.springmockk.MockkBean
 import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.extensions.spring.SpringExtension
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest
@@ -10,10 +13,11 @@ import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.get
 
 @WebMvcTest(HealthController::class)
-@Import(SecurityConfig::class)
+@Import(SecurityConfig::class, JwtAuthenticationFilter::class)
 @ActiveProfiles("test")
 class HealthControllerTest(
     private val mockMvc: MockMvc,
+    @MockkBean private val jwtProvider: JwtProvider,
 ) : DescribeSpec({
 
     extensions(SpringExtension)
