@@ -19,9 +19,9 @@ class JwtAuthenticationFilter(
         filterChain: FilterChain,
     ) {
         val token = extractToken(request)
+        val memberId = token?.let { jwtProvider.extractMemberIdOrNull(it) }
 
-        if (token != null && jwtProvider.validateToken(token)) {
-            val memberId = jwtProvider.extractMemberId(token)
+        if (memberId != null) {
             val userDetails = CustomUserDetails(memberId)
             val authentication = UsernamePasswordAuthenticationToken(
                 userDetails,

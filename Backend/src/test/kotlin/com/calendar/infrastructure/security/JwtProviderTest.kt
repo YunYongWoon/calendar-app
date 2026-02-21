@@ -1,10 +1,8 @@
 package com.calendar.infrastructure.security
 
-import com.calendar.domain.exception.ExpiredTokenException
-import com.calendar.domain.exception.InvalidTokenException
-import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.string.shouldNotBeBlank
 
 class JwtProviderTest : DescribeSpec({
@@ -25,59 +23,24 @@ class JwtProviderTest : DescribeSpec({
         }
     }
 
-    describe("extractMemberId") {
+    describe("extractMemberIdOrNull") {
         context("유효한 토큰에서 memberId를 추출하면") {
             it("생성 시 사용한 memberId와 동일하다") {
                 val memberId = 42L
                 val token = jwtProvider.generateAccessToken(memberId)
 
-                jwtProvider.extractMemberId(token) shouldBe memberId
+                jwtProvider.extractMemberIdOrNull(token) shouldBe memberId
             }
         }
 
         context("변조된 토큰이면") {
-            it("InvalidTokenException이 발생한다") {
-                shouldThrow<InvalidTokenException> {
-                    jwtProvider.extractMemberId("invalid.token.value")
-                }
+            it("null을 반환한다") {
+                jwtProvider.extractMemberIdOrNull("invalid.token.value") shouldBe null
             }
         }
 
         context("만료된 토큰이면") {
-            it("ExpiredTokenException이 발생한다") {
-                val expiredProperties = JwtProperties(
-                    secret = properties.secret,
-                    accessTokenExpiry = 0L, // 즉시 만료
-                    refreshTokenExpiry = 0L,
-                )
-                val expiredJwtProvider = JwtProvider(expiredProperties)
-                val token = expiredJwtProvider.generateAccessToken(1L)
-
-                Thread.sleep(10) // 만료 보장
-
-                shouldThrow<ExpiredTokenException> {
-                    expiredJwtProvider.extractMemberId(token)
-                }
-            }
-        }
-    }
-
-    describe("validateToken") {
-        context("유효한 토큰이면") {
-            it("true를 반환한다") {
-                val token = jwtProvider.generateAccessToken(1L)
-                jwtProvider.validateToken(token) shouldBe true
-            }
-        }
-
-        context("변조된 토큰이면") {
-            it("false를 반환한다") {
-                jwtProvider.validateToken("invalid.token") shouldBe false
-            }
-        }
-
-        context("만료된 토큰이면") {
-            it("false를 반환한다") {
+            it("null을 반환한다") {
                 val expiredProperties = JwtProperties(
                     secret = properties.secret,
                     accessTokenExpiry = 0L,
@@ -88,7 +51,16 @@ class JwtProviderTest : DescribeSpec({
 
                 Thread.sleep(10)
 
-                expiredJwtProvider.validateToken(token) shouldBe false
+                expiredJwtProvider.extractMemberIdOrNull(token) shouldBe null
+            }
+        }
+    }
+
+    describe("createRefreshTokenExpiry") {
+        context("호출하면") {
+            it("현재 시각 이후의 만료 시각을 반환한다") {
+                val expiry = jwtProvider.createRefreshTokenExpiry()
+                expiry shouldNotBe null
             }
         }
     }

@@ -3,6 +3,7 @@ package com.calendar.application.service
 import com.calendar.application.dto.LoginCommand
 import com.calendar.application.dto.RefreshCommand
 import com.calendar.application.dto.SignupCommand
+import com.calendar.application.port.TokenProvider
 import com.calendar.domain.exception.DuplicateEmailException
 import com.calendar.domain.exception.InvalidCredentialsException
 import com.calendar.domain.exception.InvalidTokenException
@@ -13,10 +14,9 @@ import com.calendar.domain.model.MemberStatus
 import com.calendar.domain.model.Nickname
 import com.calendar.domain.model.Password
 import com.calendar.domain.model.RefreshToken
+import com.calendar.domain.model.RefreshTokenId
 import com.calendar.domain.repository.MemberRepository
 import com.calendar.domain.repository.RefreshTokenRepository
-import com.calendar.infrastructure.security.JwtProperties
-import com.calendar.infrastructure.security.JwtProvider
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.matchers.shouldBe
@@ -32,19 +32,13 @@ class AuthServiceTest : DescribeSpec({
 
     val memberRepository = mockk<MemberRepository>()
     val refreshTokenRepository = mockk<RefreshTokenRepository>()
-    val jwtProperties = JwtProperties(
-        secret = "test-calendar-jwt-secret-key-must-be-at-least-256-bits-long-for-hs256",
-        accessTokenExpiry = 900_000L,
-        refreshTokenExpiry = 604_800_000L,
-    )
-    val jwtProvider = JwtProvider(jwtProperties)
+    val tokenProvider = mockk<TokenProvider>()
     val passwordEncoder = mockk<PasswordEncoder>()
 
     val authService = AuthService(
         memberRepository = memberRepository,
         refreshTokenRepository = refreshTokenRepository,
-        jwtProvider = jwtProvider,
-        jwtProperties = jwtProperties,
+        tokenProvider = tokenProvider,
         passwordEncoder = passwordEncoder,
     )
 
@@ -93,13 +87,15 @@ class AuthServiceTest : DescribeSpec({
             it("액세스 토큰과 리프레시 토큰을 반환한다") {
                 every { memberRepository.findByEmail(Email("user@example.com")) } returns existingMember
                 every { passwordEncoder.matches("password123", "encodedPassword") } returns true
+                every { tokenProvider.generateAccessToken(1L) } returns "access-token"
+                every { tokenProvider.createRefreshTokenExpiry() } returns LocalDateTime.now().plusDays(7)
                 every { refreshTokenRepository.save(any()) } answers { firstArg() }
 
                 val result = authService.login(
                     LoginCommand("user@example.com", "password123"),
                 )
 
-                result.accessToken.shouldNotBeBlank()
+                result.accessToken shouldBe "access-token"
                 result.refreshToken.shouldNotBeBlank()
             }
         }
@@ -147,7 +143,7 @@ class AuthServiceTest : DescribeSpec({
         context("유효한 리프레시 토큰이면") {
             it("새 토큰 쌍을 반환한다") {
                 val storedToken = RefreshToken(
-                    id = com.calendar.domain.model.RefreshTokenId(1L),
+                    id = RefreshTokenId(1L),
                     memberId = MemberId(1L),
                     token = "valid-refresh-token",
                     expiresAt = LocalDateTime.now().plusDays(7),
@@ -162,11 +158,13 @@ class AuthServiceTest : DescribeSpec({
                 every { refreshTokenRepository.findByToken("valid-refresh-token") } returns storedToken
                 justRun { refreshTokenRepository.deleteByToken("valid-refresh-token") }
                 every { memberRepository.findById(MemberId(1L)) } returns member
+                every { tokenProvider.generateAccessToken(1L) } returns "new-access-token"
+                every { tokenProvider.createRefreshTokenExpiry() } returns LocalDateTime.now().plusDays(7)
                 every { refreshTokenRepository.save(any()) } answers { firstArg() }
 
                 val result = authService.refresh(RefreshCommand("valid-refresh-token"))
 
-                result.accessToken.shouldNotBeBlank()
+                result.accessToken shouldBe "new-access-token"
                 result.refreshToken.shouldNotBeBlank()
             }
         }
@@ -184,7 +182,7 @@ class AuthServiceTest : DescribeSpec({
         context("만료된 리프레시 토큰이면") {
             it("InvalidTokenException이 발생한다") {
                 val expiredToken = RefreshToken(
-                    id = com.calendar.domain.model.RefreshTokenId(1L),
+                    id = RefreshTokenId(1L),
                     memberId = MemberId(1L),
                     token = "expired-refresh-token",
                     expiresAt = LocalDateTime.now().minusHours(1),

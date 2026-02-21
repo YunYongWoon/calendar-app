@@ -11,7 +11,7 @@ data class MemberResult(
 ) {
     companion object {
         fun from(member: Member): MemberResult = MemberResult(
-            id = member.id!!.value,
+            id = member.id?.value ?: error("저장된 Member에 ID가 없습니다."),
             email = member.email.value,
             nickname = member.nickname.value,
             profileImageUrl = member.profileImageUrl,

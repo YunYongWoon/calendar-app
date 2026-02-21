@@ -5,6 +5,7 @@ import com.calendar.application.dto.LoginCommand
 import com.calendar.application.dto.MemberResult
 import com.calendar.application.dto.RefreshCommand
 import com.calendar.application.dto.SignupCommand
+import com.calendar.application.port.TokenProvider
 import com.calendar.application.usecase.AuthUseCase
 import com.calendar.domain.exception.DuplicateEmailException
 import com.calendar.domain.exception.InvalidCredentialsException
@@ -16,12 +17,9 @@ import com.calendar.domain.model.Password
 import com.calendar.domain.model.RefreshToken
 import com.calendar.domain.repository.MemberRepository
 import com.calendar.domain.repository.RefreshTokenRepository
-import com.calendar.infrastructure.security.JwtProperties
-import com.calendar.infrastructure.security.JwtProvider
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import java.time.LocalDateTime
 import java.util.UUID
 
 @Service
@@ -29,8 +27,7 @@ import java.util.UUID
 class AuthService(
     private val memberRepository: MemberRepository,
     private val refreshTokenRepository: RefreshTokenRepository,
-    private val jwtProvider: JwtProvider,
-    private val jwtProperties: JwtProperties,
+    private val tokenProvider: TokenProvider,
     private val passwordEncoder: PasswordEncoder,
 ) : AuthUseCase {
 
@@ -90,13 +87,15 @@ class AuthService(
     }
 
     private fun generateTokens(member: Member): AuthResult {
-        val accessToken = jwtProvider.generateAccessToken(member.id!!.value)
+        val memberId = member.id?.value
+            ?: error("토큰 생성 불가: Member에 ID가 없습니다.")
+        val accessToken = tokenProvider.generateAccessToken(memberId)
         val refreshTokenValue = UUID.randomUUID().toString()
 
         val refreshToken = RefreshToken.create(
             memberId = member.id,
             token = refreshTokenValue,
-            expiresAt = LocalDateTime.now().plusSeconds(jwtProperties.refreshTokenExpiry / 1000),
+            expiresAt = tokenProvider.createRefreshTokenExpiry(),
         )
         refreshTokenRepository.save(refreshToken)
 
