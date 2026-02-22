@@ -1,11 +1,20 @@
 package com.calendar.interfaces.rest.handler
 
+import com.calendar.domain.exception.AlreadyGroupMemberException
 import com.calendar.domain.exception.CalendarException
+import com.calendar.domain.exception.CannotRemoveOwnerException
 import com.calendar.domain.exception.DuplicateEmailException
 import com.calendar.domain.exception.ExpiredTokenException
+import com.calendar.domain.exception.GroupMemberNotFoundException
+import com.calendar.domain.exception.GroupNotFoundException
+import com.calendar.domain.exception.InsufficientPermissionException
 import com.calendar.domain.exception.InvalidCredentialsException
+import com.calendar.domain.exception.InvalidInviteCodeException
 import com.calendar.domain.exception.InvalidTokenException
+import com.calendar.domain.exception.MaxGroupLimitExceededException
+import com.calendar.domain.exception.MaxMemberLimitExceededException
 import com.calendar.domain.exception.MemberNotFoundException
+import com.calendar.domain.exception.OwnerCannotLeaveException
 import com.calendar.interfaces.rest.dto.ErrorResponse
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
@@ -24,6 +33,15 @@ class GlobalExceptionHandler {
             is InvalidCredentialsException -> HttpStatus.UNAUTHORIZED
             is InvalidTokenException -> HttpStatus.UNAUTHORIZED
             is ExpiredTokenException -> HttpStatus.UNAUTHORIZED
+            is GroupNotFoundException -> HttpStatus.NOT_FOUND
+            is GroupMemberNotFoundException -> HttpStatus.NOT_FOUND
+            is MaxGroupLimitExceededException -> HttpStatus.BAD_REQUEST
+            is MaxMemberLimitExceededException -> HttpStatus.BAD_REQUEST
+            is AlreadyGroupMemberException -> HttpStatus.CONFLICT
+            is InvalidInviteCodeException -> HttpStatus.BAD_REQUEST
+            is InsufficientPermissionException -> HttpStatus.FORBIDDEN
+            is OwnerCannotLeaveException -> HttpStatus.BAD_REQUEST
+            is CannotRemoveOwnerException -> HttpStatus.BAD_REQUEST
         }
 
         return ResponseEntity
