@@ -35,7 +35,6 @@ dependencies {
 
     // Database
     runtimeOnly("com.mysql:mysql-connector-j")
-    runtimeOnly("com.h2database:h2")
 
     // Flyway
     implementation("org.flywaydb:flyway-core")
@@ -64,6 +63,11 @@ dependencies {
     // MockK
     testImplementation("io.mockk:mockk:1.13.14")
     testImplementation("com.ninja-squad:springmockk:4.0.2")
+
+    // Testcontainers
+    testImplementation("org.springframework.boot:spring-boot-testcontainers")
+    testImplementation("org.testcontainers:mysql")
+    testImplementation("org.testcontainers:junit-jupiter")
 }
 
 allOpen {

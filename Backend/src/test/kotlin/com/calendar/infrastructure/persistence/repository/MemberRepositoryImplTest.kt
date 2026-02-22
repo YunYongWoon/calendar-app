@@ -6,14 +6,17 @@ import com.calendar.domain.model.Nickname
 import com.calendar.domain.model.Password
 import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.extensions.spring.SpringExtension
+import com.calendar.support.TestcontainersConfig
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
+import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest
 import org.springframework.context.annotation.Import
 import org.springframework.test.context.ActiveProfiles
 
 @DataJpaTest
-@Import(MemberRepositoryImpl::class)
+@AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
+@Import(TestcontainersConfig::class, MemberRepositoryImpl::class)
 @ActiveProfiles("test")
 class MemberRepositoryImplTest(
     private val memberRepository: MemberRepositoryImpl,

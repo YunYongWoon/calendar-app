@@ -8,15 +8,18 @@ import com.calendar.domain.model.Password
 import com.calendar.domain.model.RefreshToken
 import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.extensions.spring.SpringExtension
+import com.calendar.support.TestcontainersConfig
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
+import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest
 import org.springframework.context.annotation.Import
 import org.springframework.test.context.ActiveProfiles
 import java.time.LocalDateTime
 
 @DataJpaTest
-@Import(RefreshTokenRepositoryImpl::class, MemberRepositoryImpl::class)
+@AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
+@Import(TestcontainersConfig::class, RefreshTokenRepositoryImpl::class, MemberRepositoryImpl::class)
 @ActiveProfiles("test")
 class RefreshTokenRepositoryImplTest(
     private val refreshTokenRepository: RefreshTokenRepositoryImpl,

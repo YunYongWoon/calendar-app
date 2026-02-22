@@ -7,16 +7,19 @@ import com.calendar.domain.model.GroupType
 import com.calendar.domain.model.InviteCode
 import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.extensions.spring.SpringExtension
+import com.calendar.support.TestcontainersConfig
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
+import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest
 import org.springframework.context.annotation.Import
 import org.springframework.test.context.ActiveProfiles
 import java.time.LocalDateTime
 
 @DataJpaTest
-@Import(CalendarGroupRepositoryImpl::class)
+@AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
+@Import(TestcontainersConfig::class, CalendarGroupRepositoryImpl::class)
 @ActiveProfiles("test")
 class CalendarGroupRepositoryImplTest(
     private val calendarGroupRepository: CalendarGroupRepositoryImpl,
