@@ -44,7 +44,7 @@ class GroupMemberEntity(
     val joinedAt: LocalDateTime = LocalDateTime.now(),
 ) {
     fun toDomain(): GroupMember = GroupMember(
-        id = GroupMemberId(id),
+        id = if (id > 0) GroupMemberId(id) else null,
         groupId = GroupId(groupId),
         memberId = MemberId(memberId),
         role = role,

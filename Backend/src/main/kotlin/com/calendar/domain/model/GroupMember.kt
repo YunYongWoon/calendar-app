@@ -15,10 +15,12 @@ data class GroupMember(
 
     fun updateProfile(
         displayName: DisplayName? = null,
+        clearDisplayName: Boolean = false,
         color: ColorHex? = null,
+        clearColor: Boolean = false,
     ): GroupMember = copy(
-        displayName = displayName ?: this.displayName,
-        color = color ?: this.color,
+        displayName = if (clearDisplayName) null else (displayName ?: this.displayName),
+        color = if (clearColor) null else (color ?: this.color),
     )
 
     companion object {

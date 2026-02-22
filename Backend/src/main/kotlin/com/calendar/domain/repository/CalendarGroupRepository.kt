@@ -7,6 +7,7 @@ import com.calendar.domain.model.InviteCode
 interface CalendarGroupRepository {
     fun save(group: CalendarGroup): CalendarGroup
     fun findById(id: GroupId): CalendarGroup?
+    fun findByIdIn(ids: List<GroupId>): List<CalendarGroup>
     fun findByInviteCode(inviteCode: InviteCode): CalendarGroup?
     fun delete(group: CalendarGroup)
 }

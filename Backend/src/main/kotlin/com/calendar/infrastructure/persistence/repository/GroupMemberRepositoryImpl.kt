@@ -34,6 +34,12 @@ class GroupMemberRepositoryImpl(
     override fun countByGroupId(groupId: GroupId): Int =
         groupMemberJpaRepository.countByGroupId(groupId.value)
 
+    override fun countByGroupIds(groupIds: List<GroupId>): Map<GroupId, Int> {
+        if (groupIds.isEmpty()) return emptyMap()
+        return groupMemberJpaRepository.countByGroupIdIn(groupIds.map { it.value })
+            .associate { GroupId((it[0] as Long)) to (it[1] as Long).toInt() }
+    }
+
     override fun countByMemberId(memberId: MemberId): Int =
         groupMemberJpaRepository.countByMemberId(memberId.value)
 

@@ -21,6 +21,9 @@ class CalendarGroupRepositoryImpl(
     override fun findById(id: GroupId): CalendarGroup? =
         calendarGroupJpaRepository.findByIdOrNull(id.value)?.toDomain()
 
+    override fun findByIdIn(ids: List<GroupId>): List<CalendarGroup> =
+        calendarGroupJpaRepository.findAllByIdIn(ids.map { it.value }).map { it.toDomain() }
+
     override fun findByInviteCode(inviteCode: InviteCode): CalendarGroup? =
         calendarGroupJpaRepository.findByInviteCode(inviteCode.value)?.toDomain()
 

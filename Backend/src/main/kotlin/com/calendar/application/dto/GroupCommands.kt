@@ -10,7 +10,9 @@ data class CreateGroupCommand(
 data class UpdateGroupCommand(
     val name: String? = null,
     val description: String? = null,
+    val clearDescription: Boolean = false,
     val coverImageUrl: String? = null,
+    val clearCoverImageUrl: Boolean = false,
 )
 
 data class JoinGroupCommand(
@@ -20,5 +22,7 @@ data class JoinGroupCommand(
 data class UpdateGroupMemberCommand(
     val role: String? = null,
     val displayName: String? = null,
+    val clearDisplayName: Boolean = false,
     val color: String? = null,
+    val clearColor: Boolean = false,
 )

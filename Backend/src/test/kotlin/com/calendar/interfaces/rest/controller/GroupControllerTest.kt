@@ -20,6 +20,7 @@ import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.extensions.spring.SpringExtension
 import io.mockk.every
 import io.mockk.justRun
+import java.time.LocalDateTime
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest
 import org.springframework.context.annotation.Import
 import org.springframework.http.MediaType
@@ -212,7 +213,7 @@ class GroupControllerTest(
             it("200 OK와 초대 코드를 반환한다") {
                 every { groupUseCase.generateInviteCode(1L, 1L) } returns InviteCodeResult(
                     inviteCode = "ABC123",
-                    expiresAt = "2026-02-23T00:00:00",
+                    expiresAt = LocalDateTime.of(2026, 2, 23, 0, 0, 0),
                 )
 
                 mockMvc.post("/groups/1/invite-code") {

@@ -49,13 +49,15 @@ class GroupService(
 
         val group = CalendarGroup.create(
             name = GroupName(command.name),
-            type = GroupType.valueOf(command.type),
+            type = parseGroupType(command.type),
             description = command.description,
             coverImageUrl = command.coverImageUrl,
         )
         val savedGroup = calendarGroupRepository.save(group)
+        val groupId = savedGroup.id
+            ?: throw IllegalStateException("그룹 저장 후 ID가 할당되지 않았습니다.")
 
-        val owner = GroupMember.createOwner(savedGroup.id!!, memberIdVo)
+        val owner = GroupMember.createOwner(groupId, memberIdVo)
         groupMemberRepository.save(owner)
 
         return GroupResult.from(savedGroup, memberCount = 1)
@@ -64,11 +66,15 @@ class GroupService(
     override fun getMyGroups(memberId: Long): List<GroupResult> {
         val memberIdVo = MemberId(memberId)
         val groupMembers = groupMemberRepository.findAllByMemberId(memberIdVo)
+        if (groupMembers.isEmpty()) return emptyList()
+
+        val groupIds = groupMembers.map { it.groupId }
+        val groups = calendarGroupRepository.findByIdIn(groupIds).associateBy { it.id }
+        val memberCounts = groupMemberRepository.countByGroupIds(groupIds)
 
         return groupMembers.mapNotNull { gm ->
-            val group = calendarGroupRepository.findById(gm.groupId) ?: return@mapNotNull null
-            val memberCount = groupMemberRepository.countByGroupId(gm.groupId)
-            GroupResult.from(group, memberCount)
+            val group = groups[gm.groupId] ?: return@mapNotNull null
+            GroupResult.from(group, memberCounts[gm.groupId] ?: 0)
         }
     }
 
@@ -97,7 +103,9 @@ class GroupService(
         val updated = group.update(
             name = command.name?.let { GroupName(it) },
             description = command.description,
+            clearDescription = command.clearDescription,
             coverImageUrl = command.coverImageUrl,
+            clearCoverImageUrl = command.clearCoverImageUrl,
         )
         val saved = calendarGroupRepository.save(updated)
         val memberCount = groupMemberRepository.countByGroupId(groupIdVo)
@@ -131,19 +139,24 @@ class GroupService(
         }
 
         val group = findGroupOrThrow(groupIdVo)
+        // 초대 코드 충돌 확률은 극히 낮음 (36^6 ≈ 21억). DB unique 제약이 최종 안전망 역할
         val updated = group.generateInviteCode()
         val saved = calendarGroupRepository.save(updated)
+        val inviteCode = saved.inviteCode
+            ?: throw IllegalStateException("초대 코드 생성에 실패하였습니다.")
+        val expiresAt = saved.inviteCodeExpiresAt
+            ?: throw IllegalStateException("초대 코드 만료 시간이 설정되지 않았습니다.")
 
         return InviteCodeResult(
-            inviteCode = saved.inviteCode?.value ?: error("초대 코드 생성에 실패하였습니다."),
-            expiresAt = saved.inviteCodeExpiresAt.toString(),
+            inviteCode = inviteCode.value,
+            expiresAt = expiresAt,
         )
     }
 
     @Transactional
     override fun joinGroup(memberId: Long, command: JoinGroupCommand): GroupMemberResult {
         val memberIdVo = MemberId(memberId)
-        val inviteCode = InviteCode(command.inviteCode)
+        val inviteCode = InviteCode.of(command.inviteCode)
 
         val groupCount = groupMemberRepository.countByMemberId(memberIdVo)
         if (groupCount >= MAX_GROUP_PER_MEMBER) {
@@ -157,17 +170,20 @@ class GroupService(
             throw InvalidInviteCodeException()
         }
 
-        val existingMember = groupMemberRepository.findByGroupIdAndMemberId(group.id!!, memberIdVo)
+        val groupId = group.id
+            ?: throw IllegalStateException("저장된 그룹에 ID가 없습니다.")
+
+        val existingMember = groupMemberRepository.findByGroupIdAndMemberId(groupId, memberIdVo)
         if (existingMember != null) {
             throw AlreadyGroupMemberException()
         }
 
-        val currentMemberCount = groupMemberRepository.countByGroupId(group.id!!)
+        val currentMemberCount = groupMemberRepository.countByGroupId(groupId)
         if (!group.canAcceptNewMember(currentMemberCount)) {
             throw MaxMemberLimitExceededException()
         }
 
-        val newMember = GroupMember.createMember(group.id!!, memberIdVo)
+        val newMember = GroupMember.createMember(groupId, memberIdVo)
         val saved = groupMemberRepository.save(newMember)
 
         return GroupMemberResult.from(saved)
@@ -202,16 +218,28 @@ class GroupService(
         val target = groupMemberRepository.findByGroupIdAndMemberId(groupIdVo, targetMemberIdVo)
             ?: throw GroupMemberNotFoundException()
 
-        var updated = target
         if (command.role != null) {
-            updated = updated.changeRole(GroupRole.valueOf(command.role))
+            val newRole = parseGroupRole(command.role)
+            if (target.role.isOwner()) {
+                throw CannotRemoveOwnerException("소유자의 역할은 직접 변경할 수 없습니다.")
+            }
+            if (newRole.isOwner()) {
+                throw InsufficientPermissionException("OWNER 역할은 직접 부여할 수 없습니다.")
+            }
         }
-        if (command.displayName != null || command.color != null) {
-            updated = updated.updateProfile(
-                displayName = command.displayName?.let { DisplayName(it) },
-                color = command.color?.let { ColorHex(it) },
-            )
-        }
+
+        val updated = target
+            .let { member ->
+                command.role?.let { member.changeRole(parseGroupRole(it)) } ?: member
+            }
+            .let { member ->
+                member.updateProfile(
+                    displayName = command.displayName?.let { DisplayName(it) },
+                    clearDisplayName = command.clearDisplayName,
+                    color = command.color?.let { ColorHex(it) },
+                    clearColor = command.clearColor,
+                )
+            }
 
         val saved = groupMemberRepository.save(updated)
         return GroupMemberResult.from(saved)
@@ -257,6 +285,14 @@ class GroupService(
     private fun requireGroupMember(groupId: GroupId, memberId: MemberId): GroupMember =
         groupMemberRepository.findByGroupIdAndMemberId(groupId, memberId)
             ?: throw GroupMemberNotFoundException()
+
+    private fun parseGroupType(type: String): GroupType =
+        GroupType.entries.find { it.name == type }
+            ?: throw IllegalArgumentException("지원하지 않는 그룹 유형입니다: $type")
+
+    private fun parseGroupRole(role: String): GroupRole =
+        GroupRole.entries.find { it.name == role }
+            ?: throw IllegalArgumentException("지원하지 않는 역할입니다: $role")
 
     companion object {
         const val MAX_GROUP_PER_MEMBER = 10

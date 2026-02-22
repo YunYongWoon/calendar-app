@@ -12,6 +12,7 @@ interface GroupMemberRepository {
     fun findAllByGroupId(groupId: GroupId): List<GroupMember>
     fun findAllByMemberId(memberId: MemberId): List<GroupMember>
     fun countByGroupId(groupId: GroupId): Int
+    fun countByGroupIds(groupIds: List<GroupId>): Map<GroupId, Int>
     fun countByMemberId(memberId: MemberId): Int
     fun delete(groupMember: GroupMember)
     fun deleteAllByGroupId(groupId: GroupId)

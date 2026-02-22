@@ -2,6 +2,7 @@ package com.calendar.application.dto
 
 import com.calendar.domain.model.CalendarGroup
 import com.calendar.domain.model.GroupMember
+import java.time.LocalDateTime
 
 data class GroupResult(
     val id: Long,
@@ -47,5 +48,5 @@ data class GroupMemberResult(
 
 data class InviteCodeResult(
     val inviteCode: String,
-    val expiresAt: String,
+    val expiresAt: LocalDateTime,
 )

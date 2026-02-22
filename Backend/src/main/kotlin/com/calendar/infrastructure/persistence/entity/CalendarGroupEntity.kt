@@ -51,7 +51,7 @@ class CalendarGroupEntity(
     var updatedAt: LocalDateTime = LocalDateTime.now(),
 ) {
     fun toDomain(): CalendarGroup = CalendarGroup(
-        id = GroupId(id),
+        id = if (id > 0) GroupId(id) else null,
         name = GroupName(name),
         type = type,
         description = description,

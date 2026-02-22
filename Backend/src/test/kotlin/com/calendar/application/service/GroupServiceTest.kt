@@ -7,7 +7,6 @@ import com.calendar.application.dto.UpdateGroupMemberCommand
 import com.calendar.domain.exception.AlreadyGroupMemberException
 import com.calendar.domain.exception.CannotRemoveOwnerException
 import com.calendar.domain.exception.GroupMemberNotFoundException
-import com.calendar.domain.exception.GroupNotFoundException
 import com.calendar.domain.exception.InsufficientPermissionException
 import com.calendar.domain.exception.InvalidInviteCodeException
 import com.calendar.domain.exception.MaxGroupLimitExceededException
@@ -91,20 +90,43 @@ class GroupServiceTest : DescribeSpec({
                 }
             }
         }
+
+        context("지원하지 않는 그룹 유형이면") {
+            it("IllegalArgumentException이 발생한다") {
+                every { groupMemberRepository.countByMemberId(MemberId(memberId)) } returns 0
+
+                assertThrows<IllegalArgumentException> {
+                    groupService.createGroup(
+                        memberId,
+                        CreateGroupCommand(name = "새 그룹", type = "INVALID"),
+                    )
+                }
+            }
+        }
     }
 
     describe("getMyGroups") {
         context("그룹에 가입되어 있으면") {
             it("그룹 목록을 반환한다") {
                 every { groupMemberRepository.findAllByMemberId(MemberId(memberId)) } returns listOf(ownerMember)
-                every { calendarGroupRepository.findById(GroupId(groupId)) } returns savedGroup
-                every { groupMemberRepository.countByGroupId(GroupId(groupId)) } returns 3
+                every { calendarGroupRepository.findByIdIn(listOf(GroupId(groupId))) } returns listOf(savedGroup)
+                every { groupMemberRepository.countByGroupIds(listOf(GroupId(groupId))) } returns mapOf(GroupId(groupId) to 3)
 
                 val result = groupService.getMyGroups(memberId)
 
                 result shouldHaveSize 1
                 result[0].name shouldBe "테스트 그룹"
                 result[0].memberCount shouldBe 3
+            }
+        }
+
+        context("그룹에 가입되어 있지 않으면") {
+            it("빈 목록을 반환한다") {
+                every { groupMemberRepository.findAllByMemberId(MemberId(memberId)) } returns emptyList()
+
+                val result = groupService.getMyGroups(memberId)
+
+                result shouldHaveSize 0
             }
         }
     }
@@ -329,6 +351,49 @@ class GroupServiceTest : DescribeSpec({
                     groupService.updateGroupMember(
                         2L, groupId, memberId,
                         UpdateGroupMemberCommand(role = "ADMIN"),
+                    )
+                }
+            }
+        }
+
+        context("OWNER의 역할을 변경하려 하면") {
+            it("CannotRemoveOwnerException이 발생한다") {
+                val anotherOwner = ownerMember.copy(id = GroupMemberId(10L), memberId = MemberId(10L))
+                every { groupMemberRepository.findByGroupIdAndMemberId(GroupId(groupId), MemberId(memberId)) } returns ownerMember
+                every { groupMemberRepository.findByGroupIdAndMemberId(GroupId(groupId), MemberId(10L)) } returns anotherOwner
+
+                assertThrows<CannotRemoveOwnerException> {
+                    groupService.updateGroupMember(
+                        memberId, groupId, 10L,
+                        UpdateGroupMemberCommand(role = "MEMBER"),
+                    )
+                }
+            }
+        }
+
+        context("OWNER 역할을 부여하려 하면") {
+            it("InsufficientPermissionException이 발생한다") {
+                every { groupMemberRepository.findByGroupIdAndMemberId(GroupId(groupId), MemberId(memberId)) } returns ownerMember
+                every { groupMemberRepository.findByGroupIdAndMemberId(GroupId(groupId), MemberId(2L)) } returns regularMember
+
+                assertThrows<InsufficientPermissionException> {
+                    groupService.updateGroupMember(
+                        memberId, groupId, 2L,
+                        UpdateGroupMemberCommand(role = "OWNER"),
+                    )
+                }
+            }
+        }
+
+        context("지원하지 않는 역할이면") {
+            it("IllegalArgumentException이 발생한다") {
+                every { groupMemberRepository.findByGroupIdAndMemberId(GroupId(groupId), MemberId(memberId)) } returns ownerMember
+                every { groupMemberRepository.findByGroupIdAndMemberId(GroupId(groupId), MemberId(2L)) } returns regularMember
+
+                assertThrows<IllegalArgumentException> {
+                    groupService.updateGroupMember(
+                        memberId, groupId, 2L,
+                        UpdateGroupMemberCommand(role = "INVALID"),
                     )
                 }
             }

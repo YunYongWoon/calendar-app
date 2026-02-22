@@ -47,17 +47,7 @@ class GroupController(
             ),
         )
 
-        return ResponseEntity.status(HttpStatus.CREATED).body(
-            GroupResponse(
-                id = result.id,
-                name = result.name,
-                type = result.type,
-                description = result.description,
-                coverImageUrl = result.coverImageUrl,
-                maxMembers = result.maxMembers,
-                memberCount = result.memberCount,
-            ),
-        )
+        return ResponseEntity.status(HttpStatus.CREATED).body(GroupResponse.from(result))
     }
 
     @GetMapping
@@ -65,20 +55,7 @@ class GroupController(
         @AuthenticationPrincipal userDetails: CustomUserDetails,
     ): ResponseEntity<List<GroupResponse>> {
         val results = groupUseCase.getMyGroups(userDetails.memberId)
-
-        return ResponseEntity.ok(
-            results.map {
-                GroupResponse(
-                    id = it.id,
-                    name = it.name,
-                    type = it.type,
-                    description = it.description,
-                    coverImageUrl = it.coverImageUrl,
-                    maxMembers = it.maxMembers,
-                    memberCount = it.memberCount,
-                )
-            },
-        )
+        return ResponseEntity.ok(results.map(GroupResponse::from))
     }
 
     @GetMapping("/{id}")
@@ -87,18 +64,7 @@ class GroupController(
         @PathVariable id: Long,
     ): ResponseEntity<GroupResponse> {
         val result = groupUseCase.getGroup(userDetails.memberId, id)
-
-        return ResponseEntity.ok(
-            GroupResponse(
-                id = result.id,
-                name = result.name,
-                type = result.type,
-                description = result.description,
-                coverImageUrl = result.coverImageUrl,
-                maxMembers = result.maxMembers,
-                memberCount = result.memberCount,
-            ),
-        )
+        return ResponseEntity.ok(GroupResponse.from(result))
     }
 
     @PatchMapping("/{id}")
@@ -113,21 +79,13 @@ class GroupController(
             command = UpdateGroupCommand(
                 name = request.name,
                 description = request.description,
+                clearDescription = request.clearDescription,
                 coverImageUrl = request.coverImageUrl,
+                clearCoverImageUrl = request.clearCoverImageUrl,
             ),
         )
 
-        return ResponseEntity.ok(
-            GroupResponse(
-                id = result.id,
-                name = result.name,
-                type = result.type,
-                description = result.description,
-                coverImageUrl = result.coverImageUrl,
-                maxMembers = result.maxMembers,
-                memberCount = result.memberCount,
-            ),
-        )
+        return ResponseEntity.ok(GroupResponse.from(result))
     }
 
     @DeleteMapping("/{id}")
@@ -145,13 +103,7 @@ class GroupController(
         @PathVariable id: Long,
     ): ResponseEntity<InviteCodeResponse> {
         val result = groupUseCase.generateInviteCode(userDetails.memberId, id)
-
-        return ResponseEntity.ok(
-            InviteCodeResponse(
-                inviteCode = result.inviteCode,
-                expiresAt = result.expiresAt,
-            ),
-        )
+        return ResponseEntity.ok(InviteCodeResponse.from(result))
     }
 
     @PostMapping("/join")
@@ -164,16 +116,7 @@ class GroupController(
             command = JoinGroupCommand(inviteCode = request.inviteCode),
         )
 
-        return ResponseEntity.status(HttpStatus.CREATED).body(
-            GroupMemberResponse(
-                id = result.id,
-                groupId = result.groupId,
-                memberId = result.memberId,
-                role = result.role,
-                displayName = result.displayName,
-                color = result.color,
-            ),
-        )
+        return ResponseEntity.status(HttpStatus.CREATED).body(GroupMemberResponse.from(result))
     }
 
     @GetMapping("/{id}/members")
@@ -182,19 +125,7 @@ class GroupController(
         @PathVariable id: Long,
     ): ResponseEntity<List<GroupMemberResponse>> {
         val results = groupUseCase.getGroupMembers(userDetails.memberId, id)
-
-        return ResponseEntity.ok(
-            results.map {
-                GroupMemberResponse(
-                    id = it.id,
-                    groupId = it.groupId,
-                    memberId = it.memberId,
-                    role = it.role,
-                    displayName = it.displayName,
-                    color = it.color,
-                )
-            },
-        )
+        return ResponseEntity.ok(results.map(GroupMemberResponse::from))
     }
 
     @PatchMapping("/{id}/members/{memberId}")
@@ -211,20 +142,13 @@ class GroupController(
             command = UpdateGroupMemberCommand(
                 role = request.role,
                 displayName = request.displayName,
+                clearDisplayName = request.clearDisplayName,
                 color = request.color,
+                clearColor = request.clearColor,
             ),
         )
 
-        return ResponseEntity.ok(
-            GroupMemberResponse(
-                id = result.id,
-                groupId = result.groupId,
-                memberId = result.memberId,
-                role = result.role,
-                displayName = result.displayName,
-                color = result.color,
-            ),
-        )
+        return ResponseEntity.ok(GroupMemberResponse.from(result))
     }
 
     @DeleteMapping("/{id}/members/{memberId}")

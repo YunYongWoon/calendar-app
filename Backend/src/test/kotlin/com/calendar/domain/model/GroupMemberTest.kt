@@ -74,6 +74,38 @@ class GroupMemberTest : DescribeSpec({
                 updated.color?.value shouldBe "#FFFFFF"
             }
         }
+
+        context("clearDisplayName이 true이면") {
+            it("표시 이름이 null로 초기화된다") {
+                val member = GroupMember(
+                    groupId = groupId,
+                    memberId = memberId,
+                    role = GroupRole.MEMBER,
+                    displayName = DisplayName("기존"),
+                    color = ColorHex("#000000"),
+                )
+                val updated = member.updateProfile(clearDisplayName = true)
+
+                updated.displayName.shouldBeNull()
+                updated.color?.value shouldBe "#000000"
+            }
+        }
+
+        context("clearColor가 true이면") {
+            it("색상이 null로 초기화된다") {
+                val member = GroupMember(
+                    groupId = groupId,
+                    memberId = memberId,
+                    role = GroupRole.MEMBER,
+                    displayName = DisplayName("기존"),
+                    color = ColorHex("#000000"),
+                )
+                val updated = member.updateProfile(clearColor = true)
+
+                updated.displayName?.value shouldBe "기존"
+                updated.color.shouldBeNull()
+            }
+        }
     }
 
     describe("GroupRole") {

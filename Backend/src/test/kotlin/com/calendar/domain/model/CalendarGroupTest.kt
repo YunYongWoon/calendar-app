@@ -4,7 +4,6 @@ import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
-import io.kotest.matchers.shouldNotBe
 import java.time.LocalDateTime
 
 class CalendarGroupTest : DescribeSpec({
@@ -61,6 +60,22 @@ class CalendarGroupTest : DescribeSpec({
             it("설명이 업데이트된다") {
                 val updated = group.update(description = "새 설명")
                 updated.description shouldBe "새 설명"
+            }
+        }
+
+        context("clearDescription이 true이면") {
+            it("설명이 null로 초기화된다") {
+                val withDesc = group.update(description = "기존 설명")
+                val cleared = withDesc.update(clearDescription = true)
+                cleared.description.shouldBeNull()
+            }
+        }
+
+        context("clearCoverImageUrl이 true이면") {
+            it("커버 이미지가 null로 초기화된다") {
+                val withCover = group.update(coverImageUrl = "https://example.com/old.jpg")
+                val cleared = withCover.update(clearCoverImageUrl = true)
+                cleared.coverImageUrl.shouldBeNull()
             }
         }
     }

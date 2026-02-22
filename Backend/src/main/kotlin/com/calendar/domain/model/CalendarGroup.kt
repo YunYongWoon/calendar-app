@@ -17,11 +17,13 @@ data class CalendarGroup(
     fun update(
         name: GroupName? = null,
         description: String? = null,
+        clearDescription: Boolean = false,
         coverImageUrl: String? = null,
+        clearCoverImageUrl: Boolean = false,
     ): CalendarGroup = copy(
         name = name ?: this.name,
-        description = description ?: this.description,
-        coverImageUrl = coverImageUrl ?: this.coverImageUrl,
+        description = if (clearDescription) null else (description ?: this.description),
+        coverImageUrl = if (clearCoverImageUrl) null else (coverImageUrl ?: this.coverImageUrl),
         updatedAt = LocalDateTime.now(),
     )
 
